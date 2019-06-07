@@ -67,9 +67,23 @@ int main(int argc,char ** argv){
         std::vector<operator_t> program=parse(readfile(argv[1]));
         std::stack<uint32_t> stack;
         std::map<int32_t,uint8_t> tape;
+        bool skip=false;
+        uint32_t skip_counter=0;
         uint32_t pc=0;//program counter
         int32_t ap=0;//address counter, can be negative
         for(pc=0;pc<program.size();pc++){
+            if(skip){
+                if(program[pc]==OPERATOR_LBRACKET){
+                    skip_counter++;
+                }else if(program[pc]==OPERATOR_RBRACKET){
+                    if(skip_counter>0){
+                        skip_counter--;
+                    }else{
+                        skip=false;
+                    }
+                }
+                continue;
+            }
             switch(program[pc]){
             case OPERATOR_MVRIGHT:
                 ap++;
@@ -90,7 +104,12 @@ int main(int argc,char ** argv){
                 //TODO
                 break;
             case OPERATOR_LBRACKET:
-                stack.push(pc);
+                if(tape[ap]==0){//skip block if is zero
+                    skip=true;
+                    skip_counter=0;
+                }else{
+                    stack.push(pc);
+                }
                 break;
             case OPERATOR_RBRACKET:
                 if(tape[ap]!=0){
