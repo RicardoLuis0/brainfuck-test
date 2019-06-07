@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <stack>
 
+#include <conio.h>
+
 long find_file_size(FILE * f){
     fseek(f,0,SEEK_END);
     long o=ftell(f);
@@ -30,7 +32,7 @@ enum operator_t{
     OPERATOR_MVRIGHT,
     OPERATOR_MVLEFT,
     OPERATOR_INCREMENT,
-    OPERATOR_SUBTRACT,
+    OPERATOR_DECREMENT,
     OPERATOR_PRINT,
     OPERATOR_READ,
     OPERATOR_LBRACKET,
@@ -41,7 +43,7 @@ static std::map<char,operator_t> parse_table{
     {'>',OPERATOR_MVRIGHT},
     {'<',OPERATOR_MVLEFT},
     {'+',OPERATOR_INCREMENT},
-    {'-',OPERATOR_SUBTRACT},
+    {'-',OPERATOR_DECREMENT},
     {'.',OPERATOR_PRINT},
     {',',OPERATOR_READ},
     {'[',OPERATOR_LBRACKET},
@@ -64,57 +66,58 @@ int main(int argc,char ** argv){
         return 1;
     }
     try{
-        std::vector<operator_t> program=parse(readfile(argv[1]));
-        std::stack<uint32_t> stack;
-        std::map<int32_t,uint8_t> tape;
-        bool skip=false;
-        uint32_t skip_counter=0;
+        std::vector<operator_t> program=parse(readfile(argv[1]));//parse the program at argv[1]
+        std::stack<uint32_t> stack;//stack, where the locations are stored during loops
+        std::map<int32_t,uint8_t> tape;//tape, where the data is stored
+        bool skip=false;//wether to skip block
+        uint32_t skip_depth=0;//depth of current skip
         uint32_t pc=0;//program counter
         int32_t ap=0;//address counter, can be negative
+        char c;//temp var
         for(pc=0;pc<program.size();pc++){
-            if(skip){
-                if(program[pc]==OPERATOR_LBRACKET){
-                    skip_counter++;
+            if(skip){//if is skipping blocks
+                if(program[pc]==OPERATOR_LBRACKET){//if it is a '[', add one to depth counter
+                    skip_depth++;
                 }else if(program[pc]==OPERATOR_RBRACKET){
-                    if(skip_counter>0){
-                        skip_counter--;
-                    }else{
+                    if(skip_depth>0){//if it is a ']' and depth is greater than zero, subtract one from depth
+                        skip_depth--;
+                    }else{//if it is a ']' and depth is zero, skipping is finished
                         skip=false;
                     }
                 }
                 continue;
             }
             switch(program[pc]){
-            case OPERATOR_MVRIGHT:
+            case OPERATOR_MVRIGHT://move address pointer to the right
                 ap++;
                 break;
-            case OPERATOR_MVLEFT:
+            case OPERATOR_MVLEFT://move address pointer to the left
                 ap--;
                 break;
-            case OPERATOR_INCREMENT:
+            case OPERATOR_INCREMENT://increment value by one
                 tape[ap]++;
                 break;
-            case OPERATOR_SUBTRACT:
+            case OPERATOR_DECREMENT://decrement value by one
                 tape[ap]--;
                 break;
-            case OPERATOR_PRINT:
+            case OPERATOR_PRINT://print character at pointer
                 std::cout<<char(tape[ap]);
                 break;
-            case OPERATOR_READ:
-                //TODO
+            case OPERATOR_READ://read input and store it in address
+                tape[ap]=getchar();
                 break;
             case OPERATOR_LBRACKET:
-                if(tape[ap]==0){//skip block if is zero
+                if(tape[ap]==0){//skip past block if value is zero
                     skip=true;
-                    skip_counter=0;
-                }else{
+                    skip_depth=0;
+                }else{//if not zero, add current location to the stack
                     stack.push(pc);
                 }
                 break;
             case OPERATOR_RBRACKET:
-                if(tape[ap]!=0){
+                if(tape[ap]!=0){//if value is not zero, go back to the start of the block
                     pc=stack.top();
-                }else{
+                }else{//if the value is zero, pop the stack and exit the block
                     stack.pop();
                 }
                 break;
