@@ -5,12 +5,14 @@
 #include <map>
 #include <cstdint>
 #include <stack>
+
 long find_file_size(FILE * f){
     fseek(f,0,SEEK_END);
     long o=ftell(f);
     fseek(f,0,SEEK_SET);
     return o;
 }
+
 std::string readfile(std::string filename){
     std::cout<<"reading file "<<filename<<"\n";
     FILE * f=fopen(filename.c_str(),"r");
@@ -23,6 +25,7 @@ std::string readfile(std::string filename){
     fclose(f);
     return out;
 }
+
 enum operator_t{
     OPERATOR_MVRIGHT,
     OPERATOR_MVLEFT,
@@ -33,6 +36,7 @@ enum operator_t{
     OPERATOR_LBRACKET,
     OPERATOR_RBRACKET,
 };
+
 static std::map<char,operator_t> parse_table{
     {'>',OPERATOR_MVRIGHT},
     {'<',OPERATOR_MVLEFT},
@@ -43,6 +47,7 @@ static std::map<char,operator_t> parse_table{
     {'[',OPERATOR_LBRACKET},
     {']',OPERATOR_RBRACKET},
 };
+
 std::vector<operator_t> parse(const std::string &str){
     std::vector<operator_t> o;
     for(char c:str){
@@ -61,23 +66,10 @@ int main(int argc,char ** argv){
     try{
         std::vector<operator_t> program=parse(readfile(argv[1]));
         std::stack<uint32_t> stack;
-        std::vector<uint8_t> tape;//positive tape, from 0 to infinity
-        std::vector<uint8_t> tape2;//negative tape, from -1 to infinity
-        const uint32_t tape_increment=1024;
-        tape.resize(tape_increment,0);
-        tape2.resize(tape_increment,0);
+        std::map<int32_t,uint8_t> tape;
         uint32_t pc=0;//program counter
         int32_t ap=0;//address counter, can be negative
-        auto get=[&]()->uint8_t&{
-            return (ap<0?tape2[(-ap)-1]:tape[ap]);
-        };
         for(pc=0;pc<program.size();pc++){
-            if(ap>=0&&uint32_t(ap+1)>tape.size()){//if tape is too small, resize it
-                tape.resize(tape.size()+tape_increment,0);
-            }
-            if(ap<0&&uint32_t(-ap)>tape2.size()){//if tape is too small, resize it
-                tape2.resize(tape2.size()+tape_increment,0);
-            }
             switch(program[pc]){
             case OPERATOR_MVRIGHT:
                 ap++;
@@ -86,13 +78,13 @@ int main(int argc,char ** argv){
                 ap--;
                 break;
             case OPERATOR_INCREMENT:
-                get()++;
+                tape[ap]++;
                 break;
             case OPERATOR_SUBTRACT:
-                get()--;
+                tape[ap]--;
                 break;
             case OPERATOR_PRINT:
-                std::cout<<char(get());
+                std::cout<<char(tape[ap]);
                 break;
             case OPERATOR_READ:
                 //TODO
@@ -101,7 +93,7 @@ int main(int argc,char ** argv){
                 stack.push(pc);
                 break;
             case OPERATOR_RBRACKET:
-                if(get()>0){
+                if(tape[ap]!=0){
                     pc=stack.top();
                 }else{
                     stack.pop();
