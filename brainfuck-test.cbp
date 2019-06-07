@@ -32,8 +32,15 @@
 			<Add option="-Wall" />
 			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
+			<Add directory="include" />
 		</Compiler>
+		<Unit filename="include/parser.h" />
+		<Unit filename="include/readfile.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/main.cpp" />
+		<Unit filename="src/parser.cpp" />
+		<Unit filename="src/readfile.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

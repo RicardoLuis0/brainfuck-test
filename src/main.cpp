@@ -1,64 +1,12 @@
 #include <iostream>
-#include <cstdio>
 #include <stdexcept>
 #include <vector>
 #include <map>
 #include <cstdint>
 #include <stack>
 
-#include <conio.h>
-
-long find_file_size(FILE * f){
-    fseek(f,0,SEEK_END);
-    long o=ftell(f);
-    fseek(f,0,SEEK_SET);
-    return o;
-}
-
-std::string readfile(std::string filename){
-    std::cout<<"reading file "<<filename<<"\n";
-    FILE * f=fopen(filename.c_str(),"r");
-    if(!f){
-        throw std::runtime_error("could not open file");
-    }
-    std::string out;
-    out.reserve(find_file_size(f));
-    for(char c;(c=fgetc(f))!=EOF;)out+=c;
-    fclose(f);
-    return out;
-}
-
-enum operator_t{
-    OPERATOR_MVRIGHT,
-    OPERATOR_MVLEFT,
-    OPERATOR_INCREMENT,
-    OPERATOR_DECREMENT,
-    OPERATOR_PRINT,
-    OPERATOR_READ,
-    OPERATOR_LBRACKET,
-    OPERATOR_RBRACKET,
-};
-
-static std::map<char,operator_t> parse_table{
-    {'>',OPERATOR_MVRIGHT},
-    {'<',OPERATOR_MVLEFT},
-    {'+',OPERATOR_INCREMENT},
-    {'-',OPERATOR_DECREMENT},
-    {'.',OPERATOR_PRINT},
-    {',',OPERATOR_READ},
-    {'[',OPERATOR_LBRACKET},
-    {']',OPERATOR_RBRACKET},
-};
-
-std::vector<operator_t> parse(const std::string &str){
-    std::vector<operator_t> o;
-    for(char c:str){
-        if(parse_table.find(c)!=parse_table.end()){
-            o.push_back(parse_table[c]);
-        }
-    }
-    return  o;
-}
+#include "readfile.h"
+#include "parser.h"
 
 int main(int argc,char ** argv){
     if(argc<2){
@@ -73,7 +21,6 @@ int main(int argc,char ** argv){
         uint32_t skip_depth=0;//depth of current skip
         uint32_t pc=0;//program counter
         int32_t ap=0;//address counter, can be negative
-        char c;//temp var
         for(pc=0;pc<program.size();pc++){
             if(skip){//if is skipping blocks
                 if(program[pc]==OPERATOR_LBRACKET){//if it is a '[', add one to depth counter
