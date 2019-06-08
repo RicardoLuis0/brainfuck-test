@@ -18,12 +18,10 @@ enum operator_t{
 
 enum parse_output_type_t{
     PARSE_OUTPUT_OPERATOR,
-    PARSE_OUTPUT_NUMBER,
 };
 
 struct parse_output{
     parse_output(operator_t);
-    parse_output(uint32_t);
     parse_output_type_t type;
     operator_t op;
     uint32_t num;
